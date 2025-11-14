@@ -1,0 +1,1193 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant - Menu & Billing</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* POS Printer Format Styles */
+        @media print {
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            
+            body {
+                font-family: 'Courier New', monospace;
+                font-size: 12px;
+                width: 80mm;
+                max-width: 80mm;
+                margin: 0 auto;
+            }
+            
+            .print-bill {
+                width: 80mm;
+                max-width: 80mm;
+                margin: 0;
+                padding: 5mm;
+            }
+            
+            .pos-bill {
+                width: 100%;
+                text-align: center;
+            }
+            
+            .pos-header {
+                margin-bottom: 10px;
+            }
+            
+            .pos-restaurant-name {
+                font-weight: bold;
+                font-size: 16px;
+                margin-bottom: 5px;
+                text-transform: uppercase;
+            }
+            
+            .pos-restaurant-address {
+                font-size: 10px;
+                margin-bottom: 5px;
+                line-height: 1.3;
+            }
+            
+            .pos-separator {
+                font-family: 'Courier New', monospace;
+                margin: 5px 0;
+                font-size: 11px;
+            }
+            
+            .pos-order-info {
+                font-size: 11px;
+                text-align: left;
+                margin: 5px 0;
+            }
+            
+            .pos-order-info div {
+                margin: 2px 0;
+            }
+            
+            .pos-items {
+                margin: 10px 0;
+                text-align: left;
+            }
+            
+            .pos-item-header {
+                display: flex;
+                justify-content: space-between;
+                font-weight: bold;
+                font-size: 11px;
+                margin-bottom: 5px;
+                border-bottom: 1px dashed #000;
+                padding-bottom: 3px;
+            }
+            
+            .pos-item-row {
+                display: flex;
+                justify-content: space-between;
+                font-size: 11px;
+                margin: 3px 0;
+                line-height: 1.4;
+            }
+            
+            .pos-item-name {
+                flex: 1;
+                text-align: left;
+                max-width: 45%;
+                word-wrap: break-word;
+            }
+            
+            .pos-item-qty {
+                width: 15%;
+                text-align: center;
+            }
+            
+            .pos-item-price {
+                width: 20%;
+                text-align: right;
+            }
+            
+            .pos-item-total {
+                width: 20%;
+                text-align: right;
+                font-weight: bold;
+            }
+            
+            .pos-footer {
+                margin-top: 10px;
+            }
+            
+            .pos-total {
+                font-weight: bold;
+                font-size: 14px;
+                margin: 10px 0;
+                text-align: right;
+            }
+            
+            .pos-thankyou {
+                font-size: 11px;
+                margin: 10px 0;
+                font-style: italic;
+            }
+            
+            /* Hide everything except print bill when printing */
+            body > *:not(.print-bill) {
+                display: none !important;
+            }
+            
+            .print-bill.hidden {
+                display: block !important;
+            }
+        }
+        
+        /* Screen preview styles */
+        .print-bill {
+            display: none;
+        }
+        
+        .print-bill:not(.hidden) {
+            display: block;
+            width: 80mm;
+            max-width: 80mm;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            background: white;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        .pos-bill {
+            width: 100%;
+            text-align: center;
+        }
+        
+        .pos-restaurant-name {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+        
+        .pos-restaurant-address {
+            font-size: 10px;
+            margin-bottom: 5px;
+            line-height: 1.3;
+        }
+        
+        .pos-separator {
+            font-family: 'Courier New', monospace;
+            margin: 5px 0;
+            font-size: 11px;
+        }
+        
+        .pos-order-info {
+            font-size: 11px;
+            text-align: left;
+            margin: 5px 0;
+        }
+        
+        .pos-order-info div {
+            margin: 2px 0;
+        }
+        
+        .pos-item-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 11px;
+            margin-bottom: 5px;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 3px;
+        }
+        
+        .pos-item-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            margin: 3px 0;
+            line-height: 1.4;
+        }
+        
+        .pos-item-name {
+            flex: 1;
+            text-align: left;
+            max-width: 45%;
+            word-wrap: break-word;
+        }
+        
+        .pos-item-qty {
+            width: 15%;
+            text-align: center;
+        }
+        
+        .pos-item-price {
+            width: 20%;
+            text-align: right;
+        }
+        
+        .pos-item-total {
+            width: 20%;
+            text-align: right;
+            font-weight: bold;
+        }
+        
+        .pos-total {
+            font-weight: bold;
+            font-size: 14px;
+            margin: 10px 0;
+            text-align: right;
+        }
+        
+        .pos-thankyou {
+            font-size: 11px;
+            margin: 10px 0;
+            font-style: italic;
+        }
+        
+        /* Menu Search Styles */
+        .menu-header-with-search {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .menu-header-with-search h2 {
+            margin: 0;
+        }
+        
+        .menu-search-container {
+            flex: 1;
+            max-width: 400px;
+            min-width: 200px;
+        }
+        
+        .menu-search-input {
+            width: 100%;
+            padding: 10px 18px;
+            font-size: 15px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+        
+        .menu-search-input:focus {
+            border-color: #4CAF50;
+        }
+        
+        .menu-search-input::placeholder {
+            color: #999;
+        }
+        
+        @media (max-width: 768px) {
+            .menu-header-with-search {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .menu-search-container {
+                max-width: 100%;
+            }
+        }
+        
+        /* Payment Method Styles */
+        .payment-methods {
+            margin: 20px 0;
+        }
+        
+        .payment-methods h3 {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .payment-options {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .payment-method-btn {
+            flex: 1;
+            max-width: 150px;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .payment-method-btn:hover {
+            border-color: #4CAF50;
+            background: #f0f8f0;
+            transform: translateY(-2px);
+        }
+        
+        .payment-method-btn:active {
+            transform: translateY(0);
+        }
+        
+        .payment-section {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .payment-amount {
+            text-align: center;
+        }
+        
+        .cash-payment-info {
+            padding: 20px;
+        }
+        
+        .qr-image {
+            max-width: 200px;
+            max-height: 200px;
+            width: auto;
+            height: auto;
+            margin: 0 auto;
+            display: block;
+        }
+        
+        /* Cart Tabs */
+        .cart-tabs {
+            display: flex;
+            border-bottom: 2px solid #ddd;
+            margin-bottom: 15px;
+        }
+        
+        .cart-tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            background: #f5f5f5;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .cart-tab.active {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .cart-tab:hover {
+            background: #e0e0e0;
+        }
+        
+        .cart-tab.active:hover {
+            background: #45a049;
+        }
+        
+        .previous-bills-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .previous-bill-item {
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .previous-bill-item:hover {
+            background: #e8f5e9;
+            border-color: #4CAF50;
+        }
+        
+        .previous-bill-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .previous-bill-item-id {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .previous-bill-item-date {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .previous-bill-item-total {
+            font-size: 16px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
+        .previous-bill-item-payment {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+        
+        /* Cart Height and Scroll */
+        .cart-panel {
+            max-height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .cart-header {
+            padding: 3px 10px;
+            margin: 0;
+        }
+        
+        .cart-header h2 {
+            margin: 0;
+            font-size: 16px;
+            padding: 0;
+            line-height: 1.2;
+        }
+        
+        .cart-tabs {
+            margin-top: 3px;
+            margin-bottom: 5px;
+        }
+        
+        .cart-tab {
+            padding: 6px;
+            font-size: 13px;
+        }
+        
+        .cart-tab-content {
+            display: none;
+            flex: 1;
+            overflow: hidden;
+            flex-direction: column;
+            min-height: 0;
+        }
+        
+        .cart-tab-content.active {
+            display: flex;
+        }
+        
+        .cart-items {
+            height: 180px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            flex-shrink: 0;
+        }
+        
+        .cart-item {
+            padding: 6px 8px;
+            margin-bottom: 3px;
+            line-height: 1.3;
+            min-height: 50px;
+            box-sizing: border-box;
+        }
+        
+        .cart-item h4 {
+            margin: 0 0 2px 0;
+            font-size: 13px;
+            line-height: 1.3;
+        }
+        
+        .cart-item p {
+            margin: 0;
+            font-size: 11px;
+            line-height: 1.3;
+        }
+        
+        .cart-footer {
+            flex-shrink: 0;
+            padding: 6px 0;
+            margin-top: auto;
+        }
+        
+        .cart-total {
+            margin-bottom: 5px;
+            font-size: 14px;
+            line-height: 1.3;
+        }
+        
+        .cart-actions {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        
+        .cart-actions .btn {
+            padding: 6px 10px;
+            font-size: 12px;
+            line-height: 1.3;
+        }
+        
+        .previous-bills-list {
+            height: 180px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            flex-shrink: 0;
+        }
+        
+        /* Print Bill Preview Modal - Reduced Height with Scroll */
+        #printBillPreviewModal .modal-content {
+            max-height: 500px;
+            display: flex;
+            flex-direction: column;
+            max-width: 800px;
+        }
+        
+        #printBillPreviewModal .modal-body {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        
+        #printBillPreviewContent {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            max-height: 350px;
+            padding: 10px;
+        }
+        
+        #printBillPreviewModal .bill-preview-actions {
+            flex-shrink: 0;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+        }
+        
+        #billPreviewTotal {
+            font-size: 18px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
+        /* Previous Bill Preview Modal - Same styling as Print Bill Preview */
+        #previousBillModal .modal-content {
+            max-height: 500px;
+            display: flex;
+            flex-direction: column;
+            max-width: 800px;
+        }
+        
+        #previousBillModal .modal-body {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        
+        #previousBillContent {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            max-height: 350px;
+            padding: 10px;
+        }
+        
+        #previousBillModal .bill-preview-actions {
+            flex-shrink: 0;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+        }
+        
+        #previousBillTotal {
+            font-size: 18px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #da190b;
+        }
+        
+        /* Cancel Bill Section */
+        .cancel-bill-content {
+            padding: 20px;
+        }
+        
+        .cancel-bill-results {
+            margin-top: 20px;
+        }
+        
+        .cancel-bill-results table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        .cancel-bill-results th,
+        .cancel-bill-results td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        
+        .cancel-bill-results th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+        
+        .cancel-bill-results tr:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .transaction-details {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        
+        .transaction-history-section {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #ddd;
+        }
+        
+        .transaction-history-section h3 {
+            margin-bottom: 15px;
+        }
+        
+        #cancelBillTransactionHistoryContent {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <h1 id="restaurantTitle">Restaurant Menu</h1>
+            <div id="userInfoDisplay" style="display: none; margin-right: 20px; padding: 8px 15px; background: #f0f0f0; border-radius: 5px; font-size: 14px;">
+                <span style="color: #666;">Logged in as: </span>
+                <strong id="headerUserName" style="color: #4CAF50;"></strong>
+                <span style="color: #999; margin-left: 10px;">(<span id="headerUserRole"></span>)</span>
+            </div>
+        </div>
+        <nav>
+            <button id="loginBtn" class="nav-btn">Login</button>
+            <button id="adminBtn" class="nav-btn">Admin</button>
+            <button id="menuManagementBtn" class="nav-btn">Manage Menu</button>
+            <button id="salesReportBtn" class="nav-btn">Sales Report</button>
+            <button id="cancelBillBtn" class="nav-btn">Cancel Bill</button>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Menu Section -->
+        <section id="menuSection" class="menu-section">
+            <div class="menu-header-with-search">
+                <h2>Our Menu</h2>
+                <div class="menu-search-container">
+                    <input type="text" id="menuSearchInput" placeholder="Search menu items..." class="menu-search-input">
+                </div>
+            </div>
+            <div id="menuGrid" class="menu-grid">
+                <!-- Menu items will be dynamically loaded here -->
+            </div>
+        </section>
+
+        <!-- Cart Section -->
+        <aside id="cartPanel" class="cart-panel">
+            <div class="cart-header">
+                <h2>Cart</h2>
+            </div>
+            <div class="cart-tabs">
+                <button class="cart-tab active" id="currentCartTab">Current Cart</button>
+                <button class="cart-tab" id="previousBillsTab">Previous Bills</button>
+            </div>
+            
+            <div id="currentCartContent" class="cart-tab-content active">
+                <div id="cartItems" class="cart-items">
+                    <!-- Cart items will be dynamically loaded here -->
+                </div>
+                <div class="cart-footer">
+                <div class="cart-total">
+                    <div id="cartSubtotal" style="display: none; font-size: 13px; color: #666; margin-bottom: 5px;">
+                        Subtotal: ₹<span id="cartSubtotalAmount">0.00</span>
+                    </div>
+                    <div id="cartTax" style="display: none; font-size: 13px; color: #666; margin-bottom: 5px;">
+                        GST: ₹<span id="cartTaxAmount">0.00</span>
+                    </div>
+                    <strong>Total: ₹<span id="cartTotal">0.00</span></strong>
+                </div>
+                    <div class="cart-actions">
+                        <button id="clearCartBtn" class="btn btn-secondary">Clear Cart</button>
+                        <button id="payNowBtn" class="btn btn-primary">Pay Now</button>
+                        <button id="printBillBtn" class="btn btn-primary">Print Bill</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="previousBillsContent" class="cart-tab-content">
+                <div id="previousBillsList" class="previous-bills-list">
+                    <!-- Previous bills will be dynamically loaded here -->
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Menu Management Section -->
+    <section id="menuManagementSection" class="management-section hidden">
+        <div class="section-header">
+            <h2>Menu Management</h2>
+            <button id="closeManagementBtn" class="close-btn">×</button>
+        </div>
+        <div id="menuManagementContent" class="management-content">
+            <div class="add-item-form">
+                <h3>Add New Item</h3>
+                <input type="text" id="itemName" placeholder="Item Name" class="form-input">
+                <input type="text" id="itemBarcode" placeholder="Barcode (e.g., 1001)" class="form-input">
+                <input type="number" id="itemPrice" placeholder="Price (₹)" step="0.01" class="form-input">
+                <div class="form-group">
+                    <label for="itemTax">Tax:</label>
+                    <select id="itemTax" class="form-input">
+                        <option value="no">NO</option>
+                        <option value="yes">YES</option>
+                    </select>
+                </div>
+                <div id="gstPercentageGroup" class="form-group hidden">
+                    <label for="itemGstPercentage">GST Percentage (%):</label>
+                    <input type="number" id="itemGstPercentage" placeholder="Enter GST % (e.g., 18)" step="0.01" min="0" max="100" class="form-input">
+                </div>
+                <label for="itemImageFile" class="file-input-label">
+                    <span>Select Image from Local Folder</span>
+                    <input type="file" id="itemImageFile" accept="image/*" class="file-input">
+                </label>
+                <div id="imagePreview" class="image-preview hidden">
+                    <img id="previewImage" src="" alt="Preview">
+                    <button type="button" id="removeImageBtn" class="btn btn-secondary">Remove Image</button>
+                </div>
+                <button id="addItemBtn" class="btn btn-primary">Add Item</button>
+            </div>
+            <div class="menu-items-list">
+                <h3>Current Menu Items</h3>
+                <div id="managementMenuList" class="management-menu-list">
+                    <!-- Management menu items will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Login</h2>
+                <button id="closeLoginModal" class="close-btn">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="loginUsername">Username:</label>
+                    <input type="text" id="loginUsername" placeholder="Enter username" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password:</label>
+                    <input type="password" id="loginPassword" placeholder="Enter password" class="form-input">
+                </div>
+                <button id="loginSubmitBtn" class="btn btn-primary" style="width: 100%; margin-top: 15px;">Login</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div id="editUserModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Edit User</h2>
+                <button id="closeEditUserModal" class="close-btn">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="editUsername">Username:</label>
+                    <input type="text" id="editUsername" placeholder="Enter username" class="form-input" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="editUserRole">Role:</label>
+                    <select id="editUserRole" class="form-input">
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editUserPassword">New Password:</label>
+                    <input type="password" id="editUserPassword" placeholder="Enter new password (leave blank to keep current)" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="confirmEditPassword">Confirm New Password:</label>
+                    <input type="password" id="confirmEditPassword" placeholder="Confirm new password" class="form-input">
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button id="saveUserBtn" class="btn btn-primary" style="flex: 1;">Save Changes</button>
+                    <button id="resetPasswordBtn" class="btn btn-secondary" style="flex: 1;">Reset Password</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div id="adminLoginModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Admin Login</h2>
+                <button id="closeAdminLoginModal" class="close-btn">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="adminUsername">Username:</label>
+                    <input type="text" id="adminUsername" placeholder="Enter username" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="adminPassword">Password:</label>
+                    <input type="password" id="adminPassword" placeholder="Enter password" class="form-input">
+                </div>
+                <button id="adminLoginBtn" class="btn btn-primary" style="width: 100%; margin-top: 15px;">Login</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Section -->
+    <section id="adminSection" class="management-section hidden">
+        <div class="section-header">
+            <h2>Admin Settings</h2>
+            <button id="closeAdminBtn" class="close-btn">×</button>
+        </div>
+        <div class="admin-content">
+            <div id="userManagementSection">
+                <div class="admin-form">
+                    <h3>User Management</h3>
+                    <div style="margin-bottom: 20px;">
+                        <p><strong>Current User:</strong> <span id="currentUserDisplay">Guest</span></p>
+                        <p><strong>Role:</strong> <span id="currentUserRole">Guest</span></p>
+                        <button id="logoutBtn" class="btn btn-secondary" style="margin-top: 10px;">Logout</button>
+                    </div>
+                    <div class="form-group">
+                        <label for="newUsername">Username:</label>
+                        <input type="text" id="newUsername" placeholder="Enter username" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword">Password:</label>
+                        <input type="password" id="newPassword" placeholder="Enter password" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="userRole">Role:</label>
+                        <select id="userRole" class="form-input">
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <button id="addUserBtn" class="btn btn-primary">Add User</button>
+                    <div id="usersList" style="margin-top: 20px;">
+                        <h4>Users List</h4>
+                        <div id="usersListContent">
+                            <!-- Users will be listed here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="admin-form">
+                <h3>Restaurant Information</h3>
+                <div class="form-group">
+                    <label for="restaurantName">Restaurant Name:</label>
+                    <input type="text" id="restaurantName" placeholder="Enter restaurant name" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="restaurantAddress">Restaurant Address:</label>
+                    <textarea id="restaurantAddress" placeholder="Enter restaurant address" class="form-input" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="qrCodeFile" class="file-input-label">
+                        <span>Select QR Code Image from Local Folder</span>
+                        <input type="file" id="qrCodeFile" accept="image/*" class="file-input">
+                    </label>
+                    <div id="qrCodePreview" class="image-preview hidden">
+                        <img id="qrCodePreviewImage" src="" alt="QR Code Preview">
+                        <button type="button" id="removeQRCodeBtn" class="btn btn-secondary">Remove QR Code</button>
+                    </div>
+                </div>
+                <button id="saveRestaurantInfoBtn" class="btn btn-primary">Save Information</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sales Report Section -->
+    <section id="salesReportSection" class="management-section hidden">
+        <div class="section-header">
+            <h2>Sales Report & Transaction History</h2>
+            <button id="closeSalesReportBtn" class="close-btn">×</button>
+        </div>
+        <div class="report-controls">
+            <div class="control-group">
+                <h3>Date Range Report</h3>
+                <div class="date-range-controls">
+                    <label for="startDate">From Date:</label>
+                    <input type="date" id="startDate" class="form-input">
+                    <label for="endDate">To Date:</label>
+                    <input type="date" id="endDate" class="form-input">
+                    <button id="generateDateRangeReportBtn" class="btn btn-primary">Generate Report</button>
+                </div>
+            </div>
+            <div class="control-group">
+                <h3>Search Order</h3>
+                <div class="search-controls">
+                    <input type="text" id="orderSearchInput" placeholder="Enter Order Number" class="form-input">
+                    <button id="searchOrderBtn" class="btn btn-primary">Search</button>
+                </div>
+            </div>
+            <div class="control-group">
+                <h3>User-Wise Report</h3>
+                <div class="date-range-controls">
+                    <label for="userReportStartDate">From Date:</label>
+                    <input type="date" id="userReportStartDate" class="form-input">
+                    <label for="userReportEndDate">To Date:</label>
+                    <input type="date" id="userReportEndDate" class="form-input">
+                    <button id="generateUserWiseReportBtn" class="btn btn-primary">Generate User-Wise Report</button>
+                </div>
+            </div>
+            <div class="control-group">
+                <h3>Item-Wise Report</h3>
+                <div class="date-range-controls">
+                    <label for="itemReportStartDate">From Date:</label>
+                    <input type="date" id="itemReportStartDate" class="form-input">
+                    <label for="itemReportEndDate">To Date:</label>
+                    <input type="date" id="itemReportEndDate" class="form-input">
+                    <button id="generateItemWiseReportBtn" class="btn btn-primary">Generate Item-Wise Report</button>
+                </div>
+            </div>
+        </div>
+        <div id="salesReportContent" class="report-content">
+            <!-- Sales report will be displayed here -->
+        </div>
+        <div id="reportPreviewSection" class="report-preview hidden">
+            <div class="preview-header">
+                <h3>Report Preview</h3>
+                <div class="export-buttons">
+                    <button id="exportPDFBtn" class="btn btn-primary">Export as PDF</button>
+                    <button id="exportExcelBtn" class="btn btn-primary">Export as Excel</button>
+                </div>
+            </div>
+            <div id="reportPreviewContent" class="preview-content">
+                <!-- Report preview will be displayed here -->
+            </div>
+        </div>
+        <div id="transactionHistorySection" class="transaction-history">
+            <h3>Transaction History</h3>
+            <div id="transactionHistoryContent" class="transaction-list">
+                <!-- Transaction history will be displayed here -->
+            </div>
+        </div>
+        <div id="cancelledBillsSection" class="cancelled-bills-section">
+            <h3>Cancelled Bills</h3>
+            <div id="cancelledBillsContent" class="transaction-list">
+                <!-- Cancelled bills will be displayed here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Cancel Bill Section -->
+    <section id="cancelBillSection" class="management-section hidden">
+        <div class="section-header">
+            <h2>Cancel Bill</h2>
+            <button id="closeCancelBillBtn" class="close-btn">×</button>
+        </div>
+        <div class="cancel-bill-content">
+            <div class="control-group">
+                <h3>Search by Order Number</h3>
+                <div class="search-controls">
+                    <input type="text" id="cancelBillOrderSearch" placeholder="Enter Order Number" class="form-input">
+                    <button id="searchCancelBillBtn" class="btn btn-primary">Search</button>
+                </div>
+            </div>
+            <div class="control-group">
+                <h3>Search by Date Range</h3>
+                <div class="date-range-controls">
+                    <label for="cancelBillStartDate">From Date:</label>
+                    <input type="date" id="cancelBillStartDate" class="form-input">
+                    <label for="cancelBillEndDate">To Date:</label>
+                    <input type="date" id="cancelBillEndDate" class="form-input">
+                    <button id="searchCancelBillByDateBtn" class="btn btn-primary">Search</button>
+                </div>
+            </div>
+            <div id="cancelBillResults" class="cancel-bill-results">
+                <!-- Search results will be displayed here -->
+            </div>
+            <div id="cancelBillTransactionDetails" class="transaction-details hidden">
+                <h3>Transaction Details</h3>
+                <div id="cancelBillTransactionContent">
+                    <!-- Transaction details will be displayed here -->
+                </div>
+            </div>
+            <div id="cancelBillTransactionHistory" class="transaction-history-section">
+                <h3>Transaction History</h3>
+                <div id="cancelBillTransactionHistoryContent" class="transaction-list">
+                    <!-- Transaction history will be displayed here -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Print Bill Preview Modal -->
+    <div id="printBillPreviewModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>Bill Preview</h2>
+                <button id="closePrintBillPreviewModal" class="close-btn">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="printBillPreviewContent">
+                    <!-- Print bill preview content will be displayed here -->
+                </div>
+                <div class="bill-preview-actions" style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <div id="billPreviewTotal" style="font-size: 18px; font-weight: bold; color: #4CAF50;">
+                        <!-- Total amount will be displayed here -->
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="confirmPrintBillBtn" class="btn btn-primary">Print Bill</button>
+                        <button id="cancelPrintBillBtn" class="btn btn-secondary">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Previous Bill Preview Modal -->
+    <div id="previousBillModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>Bill Preview</h2>
+                <button id="closePreviousBillModal" class="close-btn">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="previousBillContent">
+                    <!-- Previous bill content will be displayed here -->
+                </div>
+                <div class="bill-preview-actions" style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <div id="previousBillTotal" style="font-size: 18px; font-weight: bold; color: #4CAF50;">
+                        <!-- Total amount will be displayed here -->
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="printPreviousBillBtn" class="btn btn-primary">Print Bill</button>
+                        <button id="cancelPreviousBillBtn" class="btn btn-danger hidden" style="background: #f44336;">Cancel Bill</button>
+                        <button id="closePreviousBillBtn" class="btn btn-secondary">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code Modal -->
+    <div id="qrModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Payment</h2>
+                <button id="closeQRModal" class="close-btn">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="payment-amount">
+                    <p style="font-size: 20px; font-weight: bold; margin-bottom: 20px;">Total Amount: ₹<span id="qrAmount">0.00</span></p>
+                </div>
+                <div class="payment-methods">
+                    <h3>Select Payment Method</h3>
+                    <div class="payment-options">
+                        <button id="gpayBtn" class="payment-method-btn">
+                            <span style="font-size: 24px;">💳</span>
+                            <span>GPay</span>
+                        </button>
+                        <button id="cashBtn" class="payment-method-btn">
+                            <span style="font-size: 24px;">💵</span>
+                            <span>Cash</span>
+                        </button>
+                    </div>
+                </div>
+                <div id="gpaySection" class="payment-section hidden">
+                    <img id="qrCodeImage" src="images/qr-placeholder.png" alt="QR Code" class="qr-image">
+                    <p style="margin-top: 10px;">Scan QR Code to Pay</p>
+                    <button id="confirmGPayBtn" class="btn btn-primary">Confirm GPay Payment</button>
+                </div>
+                <div id="cashSection" class="payment-section hidden">
+                    <div class="cash-payment-info">
+                        <p style="margin-bottom: 15px;">Payment Method: <strong>Cash</strong></p>
+                        <button id="confirmCashBtn" class="btn btn-primary">Confirm Cash Payment</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Bill Section (hidden, for printing) -->
+    <div id="printBill" class="print-bill hidden">
+        <div class="pos-bill">
+            <div class="pos-header">
+                <div class="pos-restaurant-name" id="billRestaurantName">Restaurant Bill</div>
+                <div class="pos-restaurant-address" id="billRestaurantAddress"></div>
+                <div class="pos-separator">--------------------------------</div>
+                <div class="pos-order-info">
+                    <div>Order #: <span id="billOrderNumber"></span></div>
+                    <div>Date: <span id="billDate"></span></div>
+                </div>
+                <div class="pos-separator">--------------------------------</div>
+            </div>
+            <div class="pos-items">
+                <div class="pos-item-header">
+                    <span class="pos-item-name">Item</span>
+                    <span class="pos-item-qty">Qty</span>
+                    <span class="pos-item-price">Price</span>
+                    <span class="pos-item-total">Total</span>
+                </div>
+                <div id="billItemsBody">
+                    <!-- Bill items will be populated here -->
+                </div>
+                <div class="pos-separator">--------------------------------</div>
+                <div class="pos-subtotal" id="billSubtotal" style="display: none;">
+                    <span>Subtotal: ₹<span id="billSubtotalAmount">0.00</span></span>
+                </div>
+                <div class="pos-tax" id="billTax" style="display: none;">
+                    <span>GST: ₹<span id="billTaxAmount">0.00</span></span>
+                </div>
+            </div>
+            <div class="pos-footer">
+                <div class="pos-total">
+                    <span>Grand Total: ₹<span id="billTotal">0.00</span></span>
+                </div>
+                <div class="pos-separator">================================</div>
+                <div class="pos-thankyou">Thank you for your visit!</div>
+                <div class="pos-separator">--------------------------------</div>
+            </div>
+        </div>
+    </div>
+
+    
+
+    <script src="script.js"></script>
+</body>
+</html>
+
+
+
+
+
